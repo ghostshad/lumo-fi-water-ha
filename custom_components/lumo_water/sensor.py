@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfVolume
 from homeassistant.core import HomeAssistant
@@ -67,6 +67,42 @@ SENSOR_DEFINITIONS = [
         "state_class": SensorStateClass.MEASUREMENT,
         "value_fn": lambda data: data["monthly_warm"],
     },
+    {
+        "key": "cold_cost",
+        "name": "Cold Cost",
+        "icon": "mdi:currency-eur",
+        "native_unit_of_measurement": "EUR",
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "device_class": SensorDeviceClass.MONETARY,
+        "value_fn": lambda data: data["cold_cost"],
+    },
+    {
+        "key": "warm_cost",
+        "name": "Warm Cost",
+        "icon": "mdi:currency-eur",
+        "native_unit_of_measurement": "EUR",
+        "state_class": SensorStateClass.TOTAL_INCREASING,
+        "device_class": SensorDeviceClass.MONETARY,
+        "value_fn": lambda data: data["warm_cost"],
+    },
+    {
+        "key": "cold_cost_monthly",
+        "name": "Cold Cost Monthly",
+        "icon": "mdi:currency-eur",
+        "native_unit_of_measurement": "EUR",
+        "state_class": SensorStateClass.MEASUREMENT,
+        "device_class": SensorDeviceClass.MONETARY,
+        "value_fn": lambda data: data["monthly_cold_cost"],
+    },
+    {
+        "key": "warm_cost_monthly",
+        "name": "Warm Cost Monthly",
+        "icon": "mdi:currency-eur",
+        "native_unit_of_measurement": "EUR",
+        "state_class": SensorStateClass.MEASUREMENT,
+        "device_class": SensorDeviceClass.MONETARY,
+        "value_fn": lambda data: data["monthly_warm_cost"],
+    },
 ]
 
 
@@ -98,6 +134,8 @@ class LumoWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_icon = definition["icon"]
         self._attr_native_unit_of_measurement = definition["native_unit_of_measurement"]
         self._attr_state_class = definition["state_class"]
+        if "device_class" in definition:
+            self._attr_device_class = definition["device_class"]
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.data["uuid"])},
             name="Lumo Water Meter",
@@ -125,5 +163,12 @@ class LumoWaterSensor(CoordinatorEntity, SensorEntity):
                 attrs["last_data_date"] = data["latest"]["date"]
             if "monthly" in self._definition["key"]:
                 attrs["month"] = date.today().strftime("%Y-%m")
+            if "cost" in self._definition["key"]:
+                attrs["cold_price_per_1000_l"] = round(
+                    self.coordinator.cold_price_per_liter * 1000, 2
+                )
+                attrs["warm_price_per_1000_l"] = round(
+                    self.coordinator.warm_price_per_liter * 1000, 2
+                )
 
         return attrs

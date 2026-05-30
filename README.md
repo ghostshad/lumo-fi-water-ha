@@ -7,9 +7,11 @@ Home Assistant custom integration that fetches daily water consumption data
 
 ## Features
 
-- **6 sensor entities** — cumulative, daily, and monthly readings for both cold
-  and warm water
+- **10 sensor entities** — cumulative, daily, monthly, cost, and monthly cost
+  readings for both cold and warm water
 - **Cumulative sensors** — work with the Home Assistant Energy/Water dashboard
+- **Cost tracking** — set your water prices per 1 000 L in the integration
+  options, and get cost sensors in EUR
 - **UI configuration** — add via `Settings > Devices & Services > Add Integration`
 - **Automatic polling** — checks for new data every 6 hours
 - **Full history** — all daily consumption data stored in sensor attributes
@@ -24,6 +26,10 @@ Home Assistant custom integration that fetches daily water consumption data
 | `sensor.lumo_water_warm_daily` | `measurement` | L | Latest available day's warm |
 | `sensor.lumo_water_cold_monthly` | `measurement` | L | Current calendar month cold |
 | `sensor.lumo_water_warm_monthly` | `measurement` | L | Current calendar month warm |
+| `sensor.lumo_water_cold_cost` | `total_increasing` | EUR | All-time cold water cost |
+| `sensor.lumo_water_warm_cost` | `total_increasing` | EUR | All-time warm water cost |
+| `sensor.lumo_water_cold_cost_monthly` | `measurement` | EUR | Current month cold cost |
+| `sensor.lumo_water_warm_cost_monthly` | `measurement` | EUR | Current month warm cost |
 
 ## Installation
 
@@ -63,6 +69,19 @@ No YAML configuration needed. After restart:
 4. Enter your **Contract UUID** (the fixed UUID from your API URL)
 5. Submit — connection is validated immediately
 
+### Setting Water Prices
+
+After adding the integration, set your water prices to enable cost sensors:
+
+1. Go to `Settings > Devices & Services`
+2. Find **Lumo Water Meter** and click **Configure**
+3. Enter the price per **1 000 liters** for cold and warm water
+   (e.g., enter `5.50` if 1 000 L costs 5.50 EUR)
+4. Submit — cost sensors update automatically after the next data refresh
+
+> Prices are stored in the integration options. You can change them anytime
+> by clicking **Configure** again.
+
 ### Docker + Supervisor
 
 If running HA via Docker with the Supervisor:
@@ -82,6 +101,27 @@ water consumption page URL.
 
 > Note: The API data can be delayed by a few days. The integration polls every
 > 6 hours and picks up whatever data is available.
+
+## Updating the Integration
+
+### Via HACS
+
+1. In HACS, the update badge appears when a new release is available
+2. Click **Update** on the Lumo Water Consumption integration
+3. Restart Home Assistant
+
+### Manual update
+
+1. Replace the entire `custom_components/lumo_water/` directory with the new version
+2. Restart Home Assistant
+
+### Creating a new version (for developers)
+
+1. Edit `custom_components/lumo_water/manifest.json` and bump the `version` field
+   (e.g., `1.1.0` → `1.2.0`)
+2. Commit and push to GitHub
+3. Create a new GitHub Release with the tag matching the version (e.g., `v1.2.0`)
+4. HACS will automatically detect the new release for all users
 
 ## Requirements
 

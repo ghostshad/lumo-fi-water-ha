@@ -16,5 +16,17 @@
     "abort": {
       "already_configured": "This UUID is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Lumo Water — Price Settings",
+        "description": "Set the price per 1 000 liters for cold and warm water. Set to 0 to disable cost tracking.",
+        "data": {
+          "cold_price": "Cold water price (EUR / 1 000 L)",
+          "warm_price": "Warm water price (EUR / 1 000 L)"
+        }
+      }
+    }
   }
 }

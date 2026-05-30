@@ -12,9 +12,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class LumoWaterCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, uuid: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        uuid: str,
+        cold_price_per_1000: float = 0.0,
+        warm_price_per_1000: float = 0.0,
+    ) -> None:
         self.uuid = uuid
         self.api_url = API_URL.format(uuid=uuid)
+        self.cold_price_per_liter = cold_price_per_1000 / 1000.0
+        self.warm_price_per_liter = warm_price_per_1000 / 1000.0
 
         super().__init__(
             hass,
@@ -55,6 +63,11 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
             if c.get("date", "").startswith(month_prefix)
         )
 
+        cold_cost = round(total_cold * self.cold_price_per_liter, 2)
+        warm_cost = round(total_warm * self.warm_price_per_liter, 2)
+        monthly_cold_cost = round(monthly_cold * self.cold_price_per_liter, 2)
+        monthly_warm_cost = round(monthly_warm * self.warm_price_per_liter, 2)
+
         return {
             "consumptions": consumptions,
             "total_cold": total_cold,
@@ -62,5 +75,9 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
             "latest": latest,
             "monthly_cold": monthly_cold,
             "monthly_warm": monthly_warm,
+            "cold_cost": cold_cost,
+            "warm_cost": warm_cost,
+            "monthly_cold_cost": monthly_cold_cost,
+            "monthly_warm_cost": monthly_warm_cost,
             "contract_id": data.get("contractId", self.uuid),
         }
