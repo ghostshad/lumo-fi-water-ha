@@ -11,6 +11,16 @@ from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 
+def _to_float(value: Any) -> float:
+    """Safely convert a value to float, defaulting to 0."""
+    if value is None:
+        return 0.0
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class LumoWaterCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
@@ -43,11 +53,35 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
         except Exception as err:
             raise UpdateFailed(f"Error fetching Lumo water data: {err}") from err
 
-        consumptions: list[dict[str, Any]] = data.get("consumptions", [])
-        consumptions.sort(key=lambda x: x.get("date", ""))
+        raw_list = data.get("consumptions")
+        if not isinstance(raw_list, list):
+            raw_list = []
 
-        total_cold = sum(c.get("coldLiters", 0) for c in consumptions)
-        total_warm = sum(c.get("warmLiters", 0) for c in consumptions)
+        consumptions: list[dict[str, Any]] = []
+        seen_dates = set()
+
+        for entry in raw_list:
+            if not isinstance(entry, dict):
+                continue
+            date_str = entry.get("date", "")
+            if not isinstance(date_str, str) or not date_str.strip():
+                continue
+            if date_str in seen_dates:
+                continue
+            seen_dates.add(date_str)
+
+            consumptions.append(
+                {
+                    "date": date_str,
+                    "coldLiters": _to_float(entry.get("coldLiters")),
+                    "warmLiters": _to_float(entry.get("warmLiters")),
+                }
+            )
+
+        consumptions.sort(key=lambda x: x["date"])
+
+        total_cold = sum(c["coldLiters"] for c in consumptions)
+        total_warm = sum(c["warmLiters"] for c in consumptions)
 
         latest = consumptions[-1] if consumptions else None
 
@@ -55,14 +89,14 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
         month_prefix = f"{today.year}-{today.month:02d}"
 
         monthly_cold = sum(
-            c.get("coldLiters", 0)
+            c["coldLiters"]
             for c in consumptions
-            if c.get("date", "").startswith(month_prefix)
+            if c["date"].startswith(month_prefix)
         )
         monthly_warm = sum(
-            c.get("warmLiters", 0)
+            c["warmLiters"]
             for c in consumptions
-            if c.get("date", "").startswith(month_prefix)
+            if c["date"].startswith(month_prefix)
         )
 
         cold_cost = round(total_cold * self.cold_price_per_liter, 2)
