@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import API_URL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,11 +16,12 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
         self,
         hass: HomeAssistant,
         uuid: str,
+        api_url: str,
         cold_price_per_1000: float = 0.0,
         warm_price_per_1000: float = 0.0,
     ) -> None:
         self.uuid = uuid
-        self.api_url = API_URL.format(uuid=uuid)
+        self.api_url = api_url
         self.cold_price_per_liter = cold_price_per_1000 / 1000.0
         self.warm_price_per_liter = warm_price_per_1000 / 1000.0
 

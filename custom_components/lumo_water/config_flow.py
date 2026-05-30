@@ -4,12 +4,19 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import API_URL, CONF_COLD_PRICE, CONF_WARM_PRICE, DOMAIN
+from .const import (
+    CONF_API_URL,
+    CONF_COLD_PRICE,
+    CONF_WARM_PRICE,
+    DEFAULT_API_URL,
+    DOMAIN,
+)
 
 CONFIG_SCHEMA = vol.Schema({vol.Required("uuid"): str})
 
 OPTIONS_SCHEMA = vol.Schema(
     {
+        vol.Optional(CONF_API_URL): str,
         vol.Optional(CONF_COLD_PRICE, default=0.0): vol.Coerce(float),
         vol.Optional(CONF_WARM_PRICE, default=0.0): vol.Coerce(float),
     }
@@ -28,12 +35,14 @@ class LumoWaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(uuid)
             self._abort_if_unique_id_configured()
 
-            if not await self._test_connection(uuid):
+            api_url = DEFAULT_API_URL.format(uuid=uuid)
+
+            if not await self._test_connection(api_url):
                 errors["base"] = "cannot_connect"
             else:
                 return self.async_create_entry(
                     title="Lumo Water",
-                    data={"uuid": uuid},
+                    data={"uuid": uuid, CONF_API_URL: api_url},
                 )
 
         return self.async_show_form(
@@ -42,10 +51,10 @@ class LumoWaterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def _test_connection(self, uuid: str) -> bool:
+    async def _test_connection(self, api_url: str) -> bool:
         session = async_get_clientsession(self.hass)
         try:
-            response = await session.get(API_URL.format(uuid=uuid), timeout=30)
+            response = await session.get(api_url, timeout=30)
             if response.status != 200:
                 return False
             data = await response.json()
@@ -64,7 +73,25 @@ class LumoWaterOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+        options = self.config_entry.options or {}
+        data = self.config_entry.data or {}
+
         return self.async_show_form(
             step_id="init",
-            data_schema=OPTIONS_SCHEMA,
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_API_URL,
+                        default=options.get(CONF_API_URL, data.get(CONF_API_URL, "")),
+                    ): str,
+                    vol.Optional(
+                        CONF_COLD_PRICE,
+                        default=options.get(CONF_COLD_PRICE, 0.0),
+                    ): vol.Coerce(float),
+                    vol.Optional(
+                        CONF_WARM_PRICE,
+                        default=options.get(CONF_WARM_PRICE, 0.0),
+                    ): vol.Coerce(float),
+                }
+            ),
         )

@@ -1,6 +1,7 @@
 DOMAIN = "lumo_water"
-API_URL = "https://customer.mylumoapp.lumo.fi/api/contract-water-consumption/{uuid}"
+DEFAULT_API_URL = "https://customer.mylumoapp.lumo.fi/api/contract-water-consumption/{uuid}"
 DEFAULT_SCAN_INTERVAL = 21600
+CONF_API_URL = "api_url"
 CONF_UUID = "uuid"
 CONF_COLD_PRICE = "cold_price"
 CONF_WARM_PRICE = "warm_price"

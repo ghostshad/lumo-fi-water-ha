@@ -13,9 +13,11 @@ PLATFORMS = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    api_url = entry.options.get("api_url", entry.data.get("api_url", ""))
     coordinator = LumoWaterCoordinator(
         hass,
         entry.data["uuid"],
+        api_url,
         entry.options.get("cold_price", 0.0),
         entry.options.get("warm_price", 0.0),
     )
