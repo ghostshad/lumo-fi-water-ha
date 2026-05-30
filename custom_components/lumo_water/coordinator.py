@@ -17,6 +17,7 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         uuid: str,
         api_url: str,
+        scan_interval: int = DEFAULT_SCAN_INTERVAL,
         cold_price_per_1000: float = 0.0,
         warm_price_per_1000: float = 0.0,
     ) -> None:
@@ -29,7 +30,7 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(seconds=DEFAULT_SCAN_INTERVAL),
+            update_interval=timedelta(seconds=scan_interval),
         )
 
     async def _async_update_data(self) -> dict[str, Any]:

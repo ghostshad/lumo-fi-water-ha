@@ -7,4 +7,6 @@ CONF_COLD_PRICE = "cold_price"
 CONF_WARM_PRICE = "warm_price"
 DEFAULT_COLD_PRICE = 0.0
 DEFAULT_WARM_PRICE = 0.0
+CONF_SCAN_INTERVAL = "scan_interval"
+MIN_SCAN_INTERVAL = 3600
 ATTRIBUTION = "Data provided by Lumo Finland"

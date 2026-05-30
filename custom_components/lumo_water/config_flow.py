@@ -7,9 +7,12 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (
     CONF_API_URL,
     CONF_COLD_PRICE,
+    CONF_SCAN_INTERVAL,
     CONF_WARM_PRICE,
     DEFAULT_API_URL,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MIN_SCAN_INTERVAL,
 )
 
 CONFIG_SCHEMA = vol.Schema({vol.Required("uuid"): str})
@@ -17,6 +20,9 @@ CONFIG_SCHEMA = vol.Schema({vol.Required("uuid"): str})
 OPTIONS_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_API_URL): str,
+        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
+            vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
+        ),
         vol.Optional(CONF_COLD_PRICE, default=0.0): vol.Coerce(float),
         vol.Optional(CONF_WARM_PRICE, default=0.0): vol.Coerce(float),
     }
@@ -84,6 +90,14 @@ class LumoWaterOptionsFlow(config_entries.OptionsFlow):
                         CONF_API_URL,
                         default=options.get(CONF_API_URL, data.get(CONF_API_URL, "")),
                     ): str,
+                    vol.Optional(
+                        CONF_SCAN_INTERVAL,
+                        default=options.get(
+                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                        ),
+                    ): vol.All(
+                        vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL)
+                    ),
                     vol.Optional(
                         CONF_COLD_PRICE,
                         default=options.get(CONF_COLD_PRICE, 0.0),

@@ -20,9 +20,11 @@
   "options": {
     "step": {
       "init": {
-        "title": "Lumo Water — Price Settings",
-        "description": "Set the price per 1 000 liters for cold and warm water. Set to 0 to disable cost tracking.",
+        "title": "Lumo Water — Settings",
+        "description": "Configure API URL, polling interval, and water prices.",
         "data": {
+          "api_url": "API URL",
+          "scan_interval": "Poll interval (seconds, min 3600)",
           "cold_price": "Cold water price (EUR / 1 000 L)",
           "warm_price": "Warm water price (EUR / 1 000 L)"
         }

@@ -13,7 +13,8 @@ Home Assistant custom integration that fetches daily water consumption data
 - **Cost tracking** — set your water prices per 1 000 L in the integration
   options, and get cost sensors in EUR
 - **UI configuration** — add via `Settings > Devices & Services > Add Integration`
-- **Automatic polling** — checks for new data every 6 hours
+- **Configurable polling** — checks for new data every 6 hours by default,
+  adjustable in integration options (min 1 hour)
 - **Full history** — all daily consumption data stored in sensor attributes
 
 ## Sensors
@@ -69,18 +70,20 @@ No YAML configuration needed. After restart:
 4. Enter your **Contract UUID** (the fixed UUID from your API URL)
 5. Submit — connection is validated immediately
 
-### Setting Water Prices
+### Integration Options
 
-After adding the integration, set your water prices to enable cost sensors:
+After adding the integration, click **Configure** on **Lumo Water Meter** to
+adjust these settings:
 
-1. Go to `Settings > Devices & Services`
-2. Find **Lumo Water Meter** and click **Configure**
-3. Enter the price per **1 000 liters** for cold and warm water
-   (e.g., enter `5.50` if 1 000 L costs 5.50 EUR)
-4. Submit — cost sensors update automatically after the next data refresh
+- **API URL** — the endpoint URL for fetching water data. Defaults to
+  `https://customer.mylumoapp.lumo.fi/api/contract-water-consumption/{uuid}`.
+  Update this if Lumo changes their API.
+- **Poll interval (seconds)** — how often to fetch data. Default is `21600`
+  (6 hours). Minimum `3600` (1 hour).
+- **Cold / Warm water price (EUR / 1 000 L)** — set to enable cost sensors.
+  Enter `5.50` if 1 000 L costs 5.50 EUR. Set to `0` to disable.
 
-> Prices are stored in the integration options. You can change them anytime
-> by clicking **Configure** again.
+Settings take effect after the next data refresh or on restart.
 
 ### Docker + Supervisor
 
@@ -99,8 +102,121 @@ The integration calls the Lumo customer API endpoint:
 Your UUID is the path segment after `/api/contract-water-consumption/` in the
 water consumption page URL.
 
-> Note: The API data can be delayed by a few days. The integration polls every
-> 6 hours and picks up whatever data is available.
+> Note: The API data can be delayed by a few days. The integration polls at the
+> configured interval (default 6 hours) and picks up whatever data is available.
+> To change the polling frequency, go to **Configure** on the integration and
+> adjust **Poll interval**.
+
+## Dashboards & Cards
+
+### Statistics graph (built-in, no additional cards needed)
+
+Add a bar chart of daily consumption for the last 30 days:
+
+1. Edit your dashboard → **Add Card** → **Statistics Graph**
+2. Set **Entities** to `sensor.lumo_water_cold_daily` and `sensor.lumo_water_warm_daily`
+3. Set **Period** to `Day`, **Days to show** to `30`, **Chart type** to `Bar`
+
+Or paste this YAML in **Manual** card mode:
+
+```yaml
+type: statistics-graph
+chart_type: bar
+period: day
+days_to_show: 30
+stat_types:
+  - mean
+entities:
+  - sensor.lumo_water_cold_daily
+  - sensor.lumo_water_warm_daily
+```
+
+### ApexCharts Card (more customization)
+
+Install **ApexCharts Card** from HACS, then add:
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 30d
+span:
+  offset: '-30d'
+series:
+  - entity: sensor.lumo_water_cold_daily
+    type: column
+    name: Cold
+    stroke_width: 0
+  - entity: sensor.lumo_water_warm_daily
+    type: column
+    name: Warm
+    stroke_width: 0
+```
+
+### Energy dashboard (cumulative usage)
+
+Add the cumulative sensors to the built-in Energy dashboard:
+
+1. Go to `Settings > Energy`
+2. Under **Water**, click **Add Water Source**
+3. Select `sensor.lumo_water_cold_consumption` and/or `sensor.lumo_water_warm_consumption`
+
+## Automations
+
+### High daily usage alert
+
+Send a notification when daily cold water exceeds 500 L:
+
+```yaml
+alias: Water usage alert
+triggers:
+  - trigger: state
+    entity_id: sensor.lumo_water_cold_daily
+actions:
+  - action: notify.mobile_app_your_phone
+    data:
+      title: High water usage
+      message: >
+        Cold water consumption today: {{ states('sensor.lumo_water_cold_daily') }} L
+    enabled: "{{ states('sensor.lumo_water_cold_daily') | int(0) > 500 }}"
+```
+
+### Monthly cost threshold
+
+Warn when monthly cost exceeds a budget:
+
+```yaml
+alias: Monthly water budget alert
+triggers:
+  - trigger: state
+    entity_id: sensor.lumo_water_cold_cost_monthly
+actions:
+  - action: notify.mobile_app_your_phone
+    data:
+      title: Water budget warning
+      message: >
+        Cold water cost this month:
+        {{ states('sensor.lumo_water_cold_cost_monthly') }} EUR
+    enabled: "{{ states('sensor.lumo_water_cold_cost_monthly') | float(0) > 30 }}"
+```
+
+### Daily consumption log (persistent notification)
+
+```yaml
+alias: Log daily water
+triggers:
+  - trigger: time
+    at: "22:00:00"
+conditions:
+  - condition: template
+    value_template: "{{ states('sensor.lumo_water_cold_daily') != 'unavailable' }}"
+actions:
+  - action: persistent_notification.create
+    data:
+      title: Daily water summary
+      message: >
+        Cold: {{ states('sensor.lumo_water_cold_daily') }} L |
+        Warm: {{ states('sensor.lumo_water_warm_daily') }} L |
+        Total: {{ states('sensor.lumo_water_cold_daily') | int(0) + states('sensor.lumo_water_warm_daily') | int(0) }} L
+```
 
 ## Updating the Integration
 
