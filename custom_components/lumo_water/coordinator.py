@@ -62,5 +62,5 @@ class LumoWaterCoordinator(DataUpdateCoordinator):
             "latest": latest,
             "monthly_cold": monthly_cold,
             "monthly_warm": monthly_warm,
-            "contract_id": data.get("contractId", uuid),
+            "contract_id": data.get("contractId", self.uuid),
         }
