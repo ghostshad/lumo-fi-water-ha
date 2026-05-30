@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Lumo Water Consumption",
+        "description": "Enter your contract UUID from the Lumo water consumption API URL.",
+        "data": {
+          "uuid": "Contract UUID"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the API. Check the UUID and try again.",
+      "unknown": "An unknown error occurred."
+    },
+    "abort": {
+      "already_configured": "This UUID is already configured."
+    }
+  }
+}

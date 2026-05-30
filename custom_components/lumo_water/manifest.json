@@ -1,0 +1,12 @@
+{
+  "domain": "lumo_water",
+  "name": "Lumo Water Consumption",
+  "codeowners": ["@lumo-water"],
+  "version": "1.0.0",
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "documentation": "https://github.com/lumo-water/ha-lumo-water",
+  "issue_tracker": "https://github.com/lumo-water/ha-lumo-water/issues",
+  "integration_type": "device"
+}
