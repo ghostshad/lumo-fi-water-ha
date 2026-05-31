@@ -58,15 +58,15 @@ jobs:
       - name: Bump version in manifest
         if: steps.bump.outputs.bump != 'none'
         run: |
-          python3 -c "
-import json
-with open('custom_components/lumo_water/manifest.json') as f:
-    data = json.load(f)
-data['version'] = '${{ steps.bump.outputs.new }}'
-with open('custom_components/lumo_water/manifest.json', 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
-"
+          python3 << 'EOF'
+          import json
+          with open('custom_components/lumo_water/manifest.json') as f:
+              data = json.load(f)
+          data['version'] = '${{ steps.bump.outputs.new }}'
+          with open('custom_components/lumo_water/manifest.json', 'w') as f:
+              json.dump(data, f, indent=2)
+              f.write('\n')
+          EOF
 
       - name: Commit and tag
         if: steps.bump.outputs.bump != 'none'
