@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+          if [ -z "$last_tag" ]; then
+            commits=$(git log --format="%s" HEAD)
+          else
+            commits=$(git log "$last_tag..HEAD" --format="%s")
+          fi
+
+          bump="none"
+          while IFS= read -r line; do
+            case "$line" in
+              *"type:breaking"*) bump="major" ;;
+              *"type:feat"*) [ "$bump" != "major" ] && bump="minor" ;;
+              *"type:fix"*) [ "$bump" != "major" ] && [ "$bump" != "minor" ] && bump="patch" ;;
+            esac
+          done <<< "$commits"
+
+          echo "bump=$bump" >> "$GITHUB_OUTPUT"
+
+          if [ "$bump" = "none" ]; then
+            echo "No version bump keywords found in commits"
+            exit 0
+          fi
+
+          version=$(python3 -c "import json; print(json.load(open('custom_components/lumo_water/manifest.json'))['version'])")
+          echo "current=$version" >> "$GITHUB_OUTPUT"
+
+          IFS='.' read -r major minor patch <<< "$version"
+          case "$bump" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          new="${major}.${minor}.${patch}"
+          echo "new=$new" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in manifest
+        if: steps.bump.outputs.bump != 'none'
+        run: |
+          python3 -c "
+import json
+with open('custom_components/lumo_water/manifest.json') as f:
+    data = json.load(f)
+data['version'] = '${{ steps.bump.outputs.new }}'
+with open('custom_components/lumo_water/manifest.json', 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+
+      - name: Commit and tag
+        if: steps.bump.outputs.bump != 'none'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add custom_components/lumo_water/manifest.json
+          git commit -m "chore: bump to v${{ steps.bump.outputs.new }} [skip ci]"
+          git tag "v${{ steps.bump.outputs.new }}"
+          git push origin main --tags
+
+      - name: Create Release
+        if: steps.bump.outputs.bump != 'none'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump.outputs.new }}
+          name: v${{ steps.bump.outputs.new }}
+          generate_release_notes: true
